@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Registra Nuova Partecipazione{% endblock %}
+{% block content %}
+    <h1>Registra Nuova Partecipazione</h1>
+    <p>Attenzione: per registrare una nuova partecipazione il dipendente e il corso devono essere già stati inseriti!</p>
+	<form method="POST" action="{{ url_for('registra_partecipazione') }}" enctype="multipart/form-data" class="form-standard">
+        <div>
+            <label for="ricerca_dipendente">Dipendente:</label>
+            <input type="text" id="ricerca_dipendente" name="ricerca_dipendente" placeholder="Inserisci nome o cognome dipendente" autocomplete="off" required>
+            <input type="hidden" id="id_dipendente" name="id_dipendente">
+            <div id="risultati_dipendenti" style="position: absolute; border: 1px solid #ccc; background-color: white; z-index: 10; width: 300px; display: none;">
+            </div>
+        </div>
+        <div>
+            <label for="ricerca_corso">Corso:</label>
+            <input type="text" id="ricerca_corso" name="ricerca_corso" placeholder="Inserisci titolo corso" autocomplete="off" required>
+            <input type="hidden" id="id_corso" name="id_corso">
+            <div id="risultati_corsi" style="position: absolute; border: 1px solid #ccc; background-color: white; z-index: 10; width: 300px; display: none;">
+            </div>
+        </div>
+        <div>
+            <label for="data_completamento">Data Completamento:</label>
+            <input type="date" id="data_completamento" name="data_completamento" required>
+        </div>
+<div>
+    <label for="certificato_allegato_file">Carica Attestato (opzionale):</label>
+    <input type="file" id="certificato_allegato_file" name="certificato_allegato_file">
+</div>
+        <div>
+            <label for="certificato_allegato">Certificato Allegato (opzionale):</label>
+            <input type="text" id="certificato_allegato" name="certificato_allegato">
+        </div>
+        <div>
+            <label for="data_scadenza_certificazione">Data Scadenza Certificazione (opzionale):</label>
+            <input type="date" id="data_scadenza_certificazione" name="data_scadenza_certificazione">
+        </div>
+        <div>
+            <label for="costo_sostenuto">Costo Sostenuto (opzionale):</label>
+            <input type="number" step="0.01" id="costo_sostenuto" name="costo_sostenuto">
+        </div>
+        <div>
+            <label for="note">Note (opzionale):</label>
+            <textarea id="note" name="note"></textarea>
+        </div>
+        <br>
+        <button type="submit">Registra Partecipazione</button>
+    </form>
+    <br>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Torna alla Home</a>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ricercaDipendenteInput = document.getElementById('ricerca_dipendente');
+        const risultatiDipendentiDiv = document.getElementById('risultati_dipendenti');
+        const idDipendenteInput = document.getElementById('id_dipendente');
+
+        const ricercaCorsoInput = document.getElementById('ricerca_corso');
+        const risultatiCorsiDiv = document.getElementById('risultati_corsi');
+        const idCorsoInput = document.getElementById('id_corso');
+
+        // Gestione ricerca dinamica dipendenti
+        ricercaDipendenteInput.addEventListener('input', function() {
+            const searchTerm = this.value;
+            if (!searchTerm.trim()) {
+                risultatiDipendentiDiv.style.display = 'none';
+                idDipendenteInput.value = '';
+                return;
+            }
+            fetch(`/cerca_dipendenti?q=${searchTerm}`)
+                .then(response => response.json())
+                .then(data => {
+                    risultatiDipendentiDiv.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(dipendente => {
+                            const divSuggerimento = document.createElement('div');
+                            divSuggerimento.textContent = dipendente.nome + ' ' + dipendente.cognome;
+                            divSuggerimento.style.padding = '5px';
+                            divSuggerimento.style.cursor = 'pointer';
+                            divSuggerimento.addEventListener('click', function() {
+                                ricercaDipendenteInput.value = dipendente.nome + ' ' + dipendente.cognome;
+                                idDipendenteInput.value = dipendente.id_dipendente;
+                                risultatiDipendentiDiv.style.display = 'none';
+                            });
+                            risultatiDipendentiDiv.style.display = 'block';
+                            risultatiDipendentiDiv.appendChild(divSuggerimento);
+                        });
+                    } else {
+                        risultatiDipendentiDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Errore durante la ricerca dei dipendenti:', error);
+                    risultatiDipendentiDiv.style.display = 'none';
+                    idDipendenteInput.value = '';
+                });
+        });
+
+        ricercaDipendenteInput.addEventListener('focus', function() {
+            if (risultatiDipendentiDiv.innerHTML) {
+                risultatiDipendentiDiv.style.display = 'block';
+            }
+        });
+
+        // Gestione ricerca dinamica corsi
+        ricercaCorsoInput.addEventListener('input', function() {
+            const searchTerm = this.value;
+            if (!searchTerm.trim()) {
+                risultatiCorsiDiv.style.display = 'none';
+                idCorsoInput.value = '';
+                return;
+            }
+            fetch(`/cerca_corsi_live?q=${searchTerm}`)
+                .then(response => response.json())
+                .then(data => {
+                    risultatiCorsiDiv.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(corso => {
+                            const divSuggerimento = document.createElement('div');
+                            divSuggerimento.textContent = corso.titolo;
+                            divSuggerimento.style.padding = '5px';
+                            divSuggerimento.style.cursor = 'pointer';
+                            divSuggerimento.addEventListener('click', function() {
+                                ricercaCorsoInput.value = corso.titolo;
+                                idCorsoInput.value = corso.id_corso;
+                                risultatiCorsiDiv.style.display = 'none';
+                            });
+                            risultatiCorsiDiv.style.display = 'block';
+                            risultatiCorsiDiv.appendChild(divSuggerimento);
+                        });
+                    } else {
+                        risultatiCorsiDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Errore durante la ricerca dei corsi:', error);
+                    risultatiCorsiDiv.style.display = 'none';
+                    idCorsoInput.value = '';
+                });
+        });
+
+        ricercaCorsoInput.addEventListener('focus', function() {
+            if (risultatiCorsiDiv.innerHTML) {
+                risultatiCorsiDiv.style.display = 'block';
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!ricercaDipendenteInput.contains(event.target) && !risultatiDipendentiDiv.contains(event.target) && !ricercaCorsoInput.contains(event.target) && !risultatiCorsiDiv.contains(event.target)) {
+                risultatiDipendentiDiv.style.display = 'none';
+                risultatiCorsiDiv.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Modifica Partecipazione{% endblock %}
+{% block content %}
+    <h1>Modifica Partecipazione</h1>
+    <form method="POST" action="{{ url_for('salva_modifica_partecipazione', id_partecipazione=partecipazione.id_partecipazione) }}" enctype="multipart/form-data">
+
+<div>
+    <label for="id_dipendente">Dipendente:</label>
+    <select name="id_dipendente" id="id_dipendente" required>
+        <option value="">Seleziona un dipendente</option>
+        {% for dipendente in dipendenti %}
+        <option value="{{ dipendente.id_dipendente }}" {% if partecipazione.id_dipendente == dipendente.id_dipendente %} selected {% endif %}>
+            {{ dipendente.nome }} {{ dipendente.cognome }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
+<br>
+<div>
+    <label for="id_corso">Corso:</label>
+    <select name="id_corso" id="id_corso" required>
+        <option value="">Seleziona un corso</option>
+        {% for corso in corsi %}
+        <option value="{{ corso.id_corso }}" {% if partecipazione.id_corso == corso.id_corso %} selected {% endif %}>
+            {{ corso.titolo }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
+<br>
+    
+<div>
+        <label for="data_completamento">Data Completamento:</label>
+        <input type="date" id="data_completamento" name="data_completamento" value="{{ partecipazione.data_completamento }}">
+    </div>
+    <br>
+    <div>
+        <label for="certificato_allegato_attuale">Attestato Attuale:</label>
+        {% if partecipazione.certificato_allegato %}
+        <p>{{ partecipazione.certificato_allegato }}
+        <a href="{{ url_for('scarica_attestato', filename=partecipazione.certificato_allegato) }}" class="button">Scarica Attestato</a>
+</p>
+        {% else %}
+        <p>Nessun attestato caricato.</p>
+        {% endif %}
+    </div>
+    <br>
+    <div>
+        <label for="certificato_allegato_file">Carica Nuovo Attestato (opzionale):</label>
+        <input type="file" id="certificato_allegato_file" name="certificato_allegato_file">
+    </div>
+    <br>
+    <div>
+        <label for="data_scadenza_certificazione">Data Scadenza Certificazione (opzionale):</label>
+        <input type="date" id="data_scadenza_certificazione" name="data_scadenza_certificazione" value="{{ partecipazione.data_scadenza_certificazione }}">
+    </div>
+    <br>
+    <div>
+        <label for="costo_sostenuto">Costo Sostenuto (opzionale):</label>
+        <input type="number" step="0.01" id="costo_sostenuto" name="costo_sostenuto" value="{{ partecipazione.costo_sostenuto }}">
+    </div>
+    <br>
+    <div>
+        <label for="note">Note (opzionale):</label>
+        <textarea id="note" name="note">{{ partecipazione.note }}</textarea>
+    </div>
+    <br>
+    <button type="submit">Salva Modifiche</button>
+    {% if errore %}
+    <p class="error">{{ errore }}</p>
+    {% endif %}
+</form>
+
+    <br>
+    <a href="{{ url_for('lista_partecipazioni') }}">Torna all'elenco delle partecipazioni</a>
+{% endblock %}

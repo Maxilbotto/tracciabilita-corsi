@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Gestisci Dipendenti{% endblock %}
+{% block content %}
+
+<h1>Gestisci Dipendenti</h1>
+
+<h2>{% if modifica_in_corso %}Modifica Dipendente{% else %}Aggiungi Nuovo Dipendente{% endif %}</h2>
+
+<form method="POST" action="{% if modifica_in_corso %}{{ url_for('modifica_dipendente', id_dipendente=dipendente.id_dipendente) }}{% else %}{{ url_for('gestisci_dipendenti') }}{% endif %}">
+    <label for="nome">Nome:</label><input type="text" id="nome" name="nome" value="{% if modifica_in_corso %}{{ dipendente.nome }}{% endif %}" required><br>
+    <label for="cognome">Cognome:</label><input type="text" id="cognome" name="cognome" value="{% if modifica_in_corso %}{{ dipendente.cognome }}{% endif %}" required><br>
+    <label for="email">Email:</label><input type="email" id="email" name="email" value="{% if modifica_in_corso %}{{ dipendente.email }}{% endif %}" required><br>
+    <label for="telefono">Telefono:</label><input type="text" id="telefono" name="telefono" value="{% if modifica_in_corso %}{{ dipendente.telefono }}{% endif %}"><br>
+    <label for="data_nascita">Data di Nascita:</label><input type="date" id="data_nascita" name="data_nascita" value="{% if modifica_in_corso %}{{ dipendente.data_nascita }}{% endif %}"><br>
+    <label for="indirizzo">Indirizzo:</label><input type="text" id="indirizzo" name="indirizzo" value="{% if modifica_in_corso %}{{ dipendente.indirizzo }}{% endif %}"><br>
+    <label for="cf">Codice Fiscale:</label><input type="text" id="cf" name="cf" value="{% if modifica_in_corso %}{{ dipendente.cf }}{% endif %}"><br>
+    <label for="inquadramento">Inquadramento:</label><input type="text" id="inquadramento" name="inquadramento" value="{% if modifica_in_corso %}{{ dipendente.inquadramento }}{% endif %}"><br>
+    <label for="mansione">Mansione:</label><input type="text" id="mansione" name="mansione" value="{% if modifica_in_corso %}{{ dipendente.mansione }}{% endif %}"><br>
+    <label for="tipo_contratto">Tipo Contratto:</label><input type="text" id="tipo_contratto" name="tipo_contratto" value="{% if modifica_in_corso %}{{ dipendente.tipo_contratto }}{% endif %}"><br>
+    <label for="data_assunzione">Data Assunzione:</label><input type="date" id="data_assunzione" name="data_assunzione" value="{% if modifica_in_corso %}{{ dipendente.data_assunzione }}{% endif %}"><br>
+
+    <input type="submit" value="{% if modifica_in_corso %}Aggiorna Dipendente{% else %}Aggiungi Dipendente{% endif %}">
+    {% if modifica_in_corso %}
+        <a href="{{ url_for('gestisci_dipendenti') }}">Annulla Modifica</a>
+    {% endif %}
+</form>
+
+<hr>
+
+<h2>Elenco Dipendenti</h2>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Cognome</th>
+            <th>Email</th>
+            <th>Azioni</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for dipendente in dipendenti %}
+        <tr>
+            <td>{{ dipendente.id_dipendente }}</td>
+            <td>{{ dipendente.nome }}</td>
+            <td>{{ dipendente.cognome }}</td>
+            <td>{{ dipendente.email }}</td>
+            <td>
+                <a href="{{ url_for('modifica_dipendente', id_dipendente=dipendente.id_dipendente) }}" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i> Modifica</a>
+                <a href="#" onclick="confermaEliminaDipendente({{ dipendente.id_dipendente }})" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i> Elimina</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    let idDipendenteDaEliminare;
+
+    function confermaEliminaDipendente(id_dip) {
+        idDipendenteDaEliminare = id_dip;
+        document.getElementById('eliminaDipendenteModal').style.display = "block";
+    }
+
+    function eliminaDipendente(eliminaPartecipazioni) {
+        window.location.href = `/elimina_dipendente/${idDipendenteDaEliminare}?elimina_partecipazioni=${eliminaPartecipazioni}`;
+    }
+
+    function chiudiModal() {
+        document.getElementById('eliminaDipendenteModal').style.display = "none";
+    }
+</script>
+
+<div id="eliminaDipendenteModal" style="display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%;">
+        <p>Seleziona un'opzione per l'eliminazione:</p>
+        <button onclick="eliminaDipendente(true)">Elimina Dipendente e Partecipazioni</button>
+        <button onclick="eliminaDipendente(false)">Elimina Solo Dipendente</button>
+        <button onclick="chiudiModal()">Annulla</button>
+    </div>
+</div>
+
+{% endblock %}

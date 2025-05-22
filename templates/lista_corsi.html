@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Elenco Corsi di Formazione{% endblock %}
+{% block content %}
+    <h1>Elenco Corsi di Formazione</h1>
+<form method="GET" action="{{ url_for('lista_corsi') }}" class="form-standard">
+    <input type="text" name="q" placeholder="Cerca per titolo o ente erogatore" value="{{ query if query }}">
+    <button type="submit">Cerca</button>
+    {% if corsi %}
+    <button type="submit" name="export" value="true">Esporta in CSV</button>
+    {% endif %}
+</form>
+<br>
+    <table class="table table-striped table-bordered table-hover align-middle">
+    <thead>
+        <tr>
+            <th>ID Corso</th>
+            <th>Titolo</th>
+            <th>Numero Ore</th>
+            <th>Ente Erogatore</th>
+            <th>Descrizione</th>
+            <th>Tipologia</th>
+            <th>Data Inizio</th>
+            <th>Data Fine</th>
+            <th>Costo</th>
+            <th class="text-center">Azioni</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for corso in corsi %}
+        <tr>
+            <td>{{ corso.id_corso }}</td>
+            <td>{{ corso.titolo }}</td>
+            <td>{{ corso.numero_ore }}</td>
+            <td>{{ corso.ente_erogatore }}</td>
+            <td>{{ corso.descrizione }}</td>
+            <td>{{ corso.tipologia }}</td>
+            <td>{{ corso.data_inizio.strftime('%d-%m-%Y') if corso.data_inizio else '' }}</td>
+            <td>{{ corso.data_fine.strftime('%d-%m-%Y') if corso.data_fine else '' }}</td>
+            <td>{{ corso.costo }}</td>
+            <td class="text-center">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        ⋮
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('modifica_corso', id_corso=corso.id_corso) }}">
+                                ✏️ Modifica
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="#" onclick="confermaEliminaCorso({{ corso.id_corso }})">
+                                🗑️ Elimina
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<div id="eliminaCorsoModal" style="display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%;">
+        <p>Seleziona un'opzione per l'eliminazione:</p>
+        <button onclick="eliminaCorso(true)" class="btn btn-danger">Elimina Corso e Partecipazioni</button>
+        <button onclick="eliminaCorso(false)" class="btn btn-secondary">Elimina Solo Corso</button>
+        <button onclick="chiudiModalCorso()" class="btn btn-secondary">Annulla</button>
+    </div>
+</div>
+
+<script>
+let idCorsoDaEliminare;
+
+function confermaEliminaCorso(id_corso) {
+    idCorsoDaEliminare = id_corso;
+    document.getElementById('eliminaCorsoModal').style.display = "block";
+}
+
+function eliminaCorso(eliminaPartecipazioni) {
+    window.location.href = `/elimina_corso/${idCorsoDaEliminare}?elimina_partecipazioni=${eliminaPartecipazioni}`;
+}
+
+function chiudiModalCorso() {
+    document.getElementById('eliminaCorsoModal').style.display = "none";
+}
+</script>
+{% endblock %}

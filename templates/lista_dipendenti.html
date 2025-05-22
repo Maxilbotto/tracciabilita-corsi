@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Elenco Dipendenti{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Elenco Dipendenti</h1>
+
+    <div class="mb-3">
+        <form method="GET" action="{{ url_for('lista_dipendenti') }}" id="filtri-form" class="form-standard">
+    <label for="ricerca_dipendente">Cerca Dipendente:</label>
+    <input type="text" id="ricerca_dipendente" name="q" value="{{ query or '' }}" placeholder="Inserisci nome o cognome">
+    <input type="hidden" id="filtro_dipendente" name="filtro_dipendente">
+    <div id="risultati_dipendenti" style="position: absolute; border: 1px solid #ccc; background-color: white; z-index: 10; width: 200px; display: none;"></div>
+    <button type="submit">Cerca</button>
+</form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Cognome</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dipendente in dipendenti %}
+                <tr>
+                    <td>{{ dipendente.id_dipendente }}</td>
+                    <td>{{ dipendente.nome }}</td>
+                    <td>{{ dipendente.cognome }}</td>
+                    <td>
+                        <a href="{{ url_for('modifica_dipendente', id_dipendente=dipendente.id_dipendente) }}" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i> Modifica</a>
+						<a href="#" onclick="confermaEliminaDipendente({{ dipendente.id_dipendente }})" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i> Elimina</a>
+                    </td>
+                <div id="eliminaDipendenteModal" style="display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%;">
+        <p>Seleziona un'opzione per l'eliminazione:</p>
+        <button onclick="eliminaDipendente(true)">Elimina Dipendente e Partecipazioni</button>
+        <button onclick="eliminaDipendente(false)">Elimina Solo Dipendente</button>
+        <button onclick="chiudiModal()">Annulla</button>
+    </div>
+</div>
+				</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+let idDipendenteDaEliminare;
+
+function confermaEliminaDipendente(id_dip) {
+    idDipendenteDaEliminare = id_dip;
+    document.getElementById('eliminaDipendenteModal').style.display = "block";
+}
+
+function eliminaDipendente(eliminaPartecipazioni) {
+    window.location.href = `/elimina_dipendente/${idDipendenteDaEliminare}?elimina_partecipazioni=${eliminaPartecipazioni}`;
+}
+
+function chiudiModal() {
+    document.getElementById('eliminaDipendenteModal').style.display = "none";
+}
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ricercaDipendenteInput = document.getElementById('ricerca_dipendente');
+        const risultatiDipendentiDiv = document.getElementById('risultati_dipendenti');
+        const filtroDipendenteIdInput = document.getElementById('filtro_dipendente');
+        const ricercaCorsoInput = document.getElementById('ricerca_corso');
+        const risultatiCorsiDiv = document.getElementById('risultati_corsi');
+        const filtroCorsoIdInput = document.getElementById('filtro_corso_id');
+        const formListaPartecipazioni = document.getElementById('filtri-form'); // Sposta qui la dichiarazione
+        const resetDipendenteButton = document.getElementById('resetDipendenteButton'); // Assicurati che questo ID esista nel tuo HTML
+
+        // Gestione ricerca dinamica dipendenti
+        ricercaDipendenteInput.addEventListener('input', function() {
+            const searchTerm = this.value;
+            console.log('Input dipendente cambiato:', searchTerm);
+
+            if (!searchTerm.trim()) {
+                risultatiDipendentiDiv.style.display = 'none';
+                filtroDipendenteIdInput.value = '';
+                return;
+            }
+
+            fetch(`/cerca_dipendenti?q=${searchTerm}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Risultati dipendenti:', data);
+                    risultatiDipendentiDiv.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(dip => {
+                            const divSuggerimento = document.createElement('div');
+                            divSuggerimento.textContent = dip.nome + ' ' + dip.cognome;
+                            divSuggerimento.style.padding = '5px';
+                            divSuggerimento.style.cursor = 'pointer';
+
+                            divSuggerimento.addEventListener('click', function () {
+                                console.log('Suggerimento dipendente cliccato:', dip.id_dipendente);
+                                ricercaDipendenteInput.value = dip.nome + ' ' + dip.cognome;
+                                filtroDipendenteIdInput.value = dip.id_dipendente;
+                                risultatiDipendentiDiv.style.display = 'none';
+                                formListaPartecipazioni.submit();
+                                console.log('Form sottomesso (dipendente)');
+                            });
+
+                            risultatiDipendentiDiv.appendChild(divSuggerimento);
+                        });
+                        risultatiDipendentiDiv.style.display = 'block';
+                    } else {
+                        risultatiDipendentiDiv.style.display = 'none';
+                        filtroDipendenteIdInput.value = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Errore durante la ricerca dei dipendenti:', error);
+                    risultatiDipendentiDiv.style.display = 'none';
+                    filtroDipendenteIdInput.value = '';
+                });
+            // ... (il tuo codice per la ricerca dei dipendenti) ...
+        });
+
+        ricercaDipendenteInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (filtroDipendenteIdInput.value) {
+                    formListaPartecipazioni.submit();
+                }
+            }
+            // ... (il tuo codice per la gestione dell'Enter nei dipendenti) ...
+        });
+
+        // Gestione ricerca dinamica corsi
+        ricercaCorsoInput.addEventListener('input', function() {
+            const searchTerm = this.value;
+            console.log('Input corso cambiato:', searchTerm); // Debug
+
+            if (!searchTerm.trim()) {
+                risultatiCorsiDiv.style.display = 'none';
+                filtroCorsoIdInput.value = '';
+                return;
+            }
+
+            fetch(`/cerca_corsi?q=${searchTerm}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Risultati corsi:', data); // Debug
+                    risultatiCorsiDiv.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(corso => {
+                            const divSuggerimento = document.createElement('div');
+                            divSuggerimento.textContent = corso.titolo;
+                            divSuggerimento.style.padding = '5px';
+                            divSuggerimento.style.cursor = 'pointer';
+
+                            divSuggerimento.addEventListener('click', function() {
+                                console.log('Suggerimento corso cliccato:', corso.id_corso, corso.titolo); // Debug
+                                ricercaCorsoInput.value = corso.titolo;
+                                filtroCorsoIdInput.value = corso.id_corso;
+                                risultatiCorsiDiv.style.display = 'none';
+                                formListaPartecipazioni.submit(); // Ora dovrebbe essere definita
+                                console.log('Form sottomesso (corso)'); // Debug
+                            });
+
+                            risultatiCorsiDiv.appendChild(divSuggerimento);
+                        });
+                        risultatiCorsiDiv.style.display = 'block';
+                    } else {
+                        risultatiCorsiDiv.style.display = 'none';
+                        filtroCorsoIdInput.value = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Errore durante la ricerca dei corsi:', error);
+                    risultatiCorsiDiv.style.display = 'none';
+                    filtroCorsoIdInput.value = '';
+                });
+        });
+
+        ricercaCorsoInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (filtroCorsoIdInput.value) {
+                    formListaPartecipazioni.submit();
+                }
+            }
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!ricercaDipendenteInput.contains(event.target) && !risultatiDipendentiDiv.contains(event.target) && !ricercaCorsoInput.contains(event.target) && !risultatiCorsiDiv.contains(event.target)) {
+                risultatiDipendentiDiv.style.display = 'none';
+                risultatiCorsiDiv.style.display = 'none';
+            }
+        });
+
+        // Gestore di eventi per il pulsante di reset
+        if (resetDipendenteButton) { // Verifica se l'elemento esiste
+            resetDipendenteButton.addEventListener('click', function() {
+                ricercaDipendenteInput.value = '';
+                filtroDipendenteIdInput.value = '';
+                risultatiDipendentiDiv.style.display = 'none';
+                // Ricarica la pagina per mostrare tutti i dipendenti
+                window.location.href = "{{ url_for('lista_dipendenti') }}";
+            });
+        }
+    });
+</script>
+{% endblock %}

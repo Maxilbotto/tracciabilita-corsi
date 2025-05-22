@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}Elenco Partecipazioni{% endblock %}
+{% block content %}
+    <h1>Elenco Partecipazioni</h1>
+
+    <form method="GET" action="{{ url_for('lista_partecipazioni') }}" class="form-standard" id="filtri-form">
+        <div>
+            <label for="ricerca_dipendente">Filtra per Dipendente:</label>
+            <input type="text" id="ricerca_dipendente" name="ricerca_dipendente" placeholder="Inserisci nome o cognome">
+            <input type="hidden" id="filtro_dipendente_id" name="filtro_dipendente">
+            <div id="risultati_dipendenti" style="position: absolute; border: 1px solid #ccc; background-color: white; z-index: 10; width: 200px; display: none;">
+                </div>
+				<button type="button" id="reset_dipendente">Reset</button>
+        </div>
+        <br>
+        <br>
+        <button type="submit" style="display: none;">Filtra</button>
+<div>
+    <label for="ricerca_corso">Filtra per Corso:</label>
+    <input type="text" id="ricerca_corso" name="ricerca_corso" placeholder="Inserisci il titolo del corso">
+    <input type="hidden" id="filtro_corso_id" name="filtro_corso">
+    <div id="risultati_corsi" style="position: absolute; border: 1px solid #ccc; background-color: white; z-index: 10; width: 300px; display: none;">
+        </div>
+		<button type="button" id="reset_corso">Reset</button>
+</div>
+<br>
+<a href="{{ url_for('lista_partecipazioni', q=query, sort=sort, order=order, filtro_dipendente=filtro_dipendente, filtro_corso=filtro_corso, export=1) }}" class="btn btn-primary">Esporta in CSV</a>
+<br>
+        </form>
+<br>
+    <table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>
+                <a href="{{ url_for('lista_partecipazioni', sort='dipendente', order='desc' if sort == 'dipendente' and order == 'asc' else 'asc', q=query) }}">
+                    Dipendente {% if sort == 'dipendente' %}{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="{{ url_for('lista_partecipazioni', sort='corso', order='desc' if sort == 'corso' and order == 'asc' else 'asc', q=query) }}">
+                    Corso {% if sort == 'corso' %}{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="{{ url_for('lista_partecipazioni', sort='data_completamento', order='desc' if sort == 'data_completamento' and order == 'asc' else 'asc', q=query) }}">
+                    Data Completamento {% if sort == 'data_completamento' %}{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}{% endif %}
+                </a>
+            </th>
+            <th>Attestato</th>
+            <th>Scadenza Cert.</th>
+            <th>Costo</th>
+            <th>Note</th>
+            <th class="text-center">Azioni</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for partecipazione in partecipazioni %}
+        <tr>
+            <td>{{ partecipazione.id_partecipazione }}</td>
+            <td>{{ partecipazione.nome_dipendente }} {{ partecipazione.cognome_dipendente }}</td>
+            <td>{{ partecipazione.titolo_corso }}</td>
+            <td>{{ partecipazione.data_completamento.strftime('%d/%m/%Y') if partecipazione.data_completamento else '' }}</td>
+            <td>
+                {% if partecipazione.certificato_allegato %}
+                <a href="{{ url_for('scarica_attestato', filename=partecipazione.certificato_allegato) }}" class="btn btn-sm btn-success">Scarica</a>
+                {% else %}
+                N/A
+                {% endif %}
+            </td>
+            <td>{{ partecipazione.data_scadenza_certificazione.strftime('%d/%m/%Y') if partecipazione.data_scadenza_certificazione else '' }}</td>
+            <td>{{ partecipazione.costo_sostenuto }}</td>
+            <td>{{ partecipazione.note }}</td>
+            <td class="text-center">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        ⋮
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('modifica_partecipazione', id_partecipazione=partecipazione.id_partecipazione) }}">
+                                ✏️ Modifica
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="{{ url_for('elimina_partecipazione', id_partecipazione=partecipazione.id_partecipazione) }}" onclick="return confirm('Sei sicuro di voler eliminare questa partecipazione?')">
+                                🗑️ Elimina
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+    <br>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Torna alla Home</a>
+	
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const ricercaDipendenteInput = document.getElementById('ricerca_dipendente');
+    const risultatiDipendentiDiv = document.getElementById('risultati_dipendenti');
+    const filtroDipendenteIdInput = document.getElementById('filtro_dipendente_id');
+    const ricercaCorsoInput = document.getElementById('ricerca_corso');
+    const risultatiCorsiDiv = document.getElementById('risultati_corsi');
+    const filtroCorsoIdInput = document.getElementById('filtro_corso_id');
+    const formListaPartecipazioni = document.getElementById('filtri-form');
+    const resetDipendenteButton = document.getElementById('reset_dipendente');
+    const resetCorsoButton = document.getElementById('reset_corso');
+
+    // Gestione ricerca dinamica dipendenti
+    ricercaDipendenteInput.addEventListener('input', function() {
+        const searchTerm = this.value;
+        console.log('Input dipendente cambiato:', searchTerm);
+
+        if (!searchTerm.trim()) {
+            risultatiDipendentiDiv.style.display = 'none';
+            filtroDipendenteIdInput.value = '';
+            return;
+        }
+
+        fetch(`/cerca_dipendenti?q=${searchTerm}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Risultati dipendenti:', data);
+                risultatiDipendentiDiv.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(dip => {
+                        const divSuggerimento = document.createElement('div');
+                        divSuggerimento.textContent = dip.nome + ' ' + dip.cognome;
+                        divSuggerimento.style.padding = '5px';
+                        divSuggerimento.style.cursor = 'pointer';
+
+                        divSuggerimento.addEventListener('click', function() {
+                            console.log('Suggerimento dipendente cliccato:', dip.id_dipendente);
+                            ricercaDipendenteInput.value = dip.nome + ' ' + dip.cognome;
+                            filtroDipendenteIdInput.value = dip.id_dipendente;
+                            filtroDipendenteIdInput.setAttribute("value", dip.id_dipendente);
+							risultatiDipendentiDiv.style.display = 'none';
+
+                            // Sottometti il form quando si clicca sul suggerimento
+                            console.log('Valore filtro_dipendente_id prima dell\'invio:', filtroDipendenteIdInput.value);
+                            formListaPartecipazioni.submit();
+                            console.log('Form sottomesso (dipendente)');
+                        });
+
+                        risultatiDipendentiDiv.appendChild(divSuggerimento);
+                    });
+                    risultatiDipendentiDiv.style.display = 'block';
+                } else {
+                    risultatiDipendentiDiv.style.display = 'none';
+                    filtroDipendenteIdInput.value = '';
+                }
+            })
+            .catch(error => {
+                console.error('Errore durante la ricerca dei dipendenti:', error);
+                risultatiDipendentiDiv.style.display = 'none';
+                filtroDipendenteIdInput.value = '';
+            });
+    });
+
+    ricercaDipendenteInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (filtroDipendenteIdInput.value) {
+                formListaPartecipazioni.submit();
+            }
+        }
+    });
+
+    // Gestione ricerca dinamica corsi
+    ricercaCorsoInput.addEventListener('input', function() {
+        const searchTerm = this.value;
+        console.log('Input corso cambiato:', searchTerm);
+
+        if (!searchTerm.trim()) {
+            risultatiCorsiDiv.style.display = 'none';
+            filtroCorsoIdInput.value = '';
+            return;
+        }
+
+        fetch(`/cerca_corsi_live?q=${searchTerm}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Risultati corsi:', data);
+                risultatiCorsiDiv.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(corso => {
+                        const divSuggerimento = document.createElement('div');
+                        divSuggerimento.textContent = corso.titolo;
+                        divSuggerimento.style.padding = '5px';
+                        divSuggerimento.style.cursor = 'pointer';
+
+                        divSuggerimento.addEventListener('click', function() {
+                            console.log('Suggerimento corso cliccato:', corso.id_corso, corso.titolo);
+                            ricercaCorsoInput.value = corso.titolo;
+                            filtroCorsoIdInput.value = corso.id_corso;
+                            risultatiCorsiDiv.style.display = 'none';
+
+                            // Sottometti il form quando si clicca sul suggerimento
+                            console.log('Valore filtro_corso_id prima dell\'invio:', filtroCorsoIdInput.value);
+                            formListaPartecipazioni.submit();
+                            console.log('Form sottomesso (corso)');
+                        });
+
+                        risultatiCorsiDiv.appendChild(divSuggerimento);
+                    });
+                    risultatiCorsiDiv.style.display = 'block';
+                } else {
+                    risultatiCorsiDiv.style.display = 'none';
+                    filtroCorsoIdInput.value = '';
+                }
+            })
+            .catch(error => {
+                console.error('Errore durante la ricerca dei corsi:', error);
+                risultatiCorsiDiv.style.display = 'none';
+                filtroCorsoIdInput.value = '';
+            });
+    });
+
+    ricercaCorsoInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (filtroCorsoIdInput.value) {
+                formListaPartecipazioni.submit();
+            }
+        }
+    });
+
+    document.addEventListener('click', function(event) {
+        if (!ricercaDipendenteInput.contains(event.target) && !risultatiDipendentiDiv.contains(event.target) && !ricercaCorsoInput.contains(event.target) && !risultatiCorsiDiv.contains(event.target)) {
+            risultatiDipendentiDiv.style.display = 'none';
+            risultatiCorsiDiv.style.display = 'none';
+        }
+    });
+
+    // Gestori di eventi per i pulsanti di reset
+    resetDipendenteButton.addEventListener('click', function() {
+        ricercaDipendenteInput.value = '';
+        filtroDipendenteIdInput.value = '';
+        risultatiDipendentiDiv.style.display = 'none';
+        formListaPartecipazioni.submit();
+    });
+
+    resetCorsoButton.addEventListener('click', function() {
+        ricercaCorsoInput.value = '';
+        filtroCorsoIdInput.value = '';
+        risultatiCorsiDiv.style.display = 'none';
+        formListaPartecipazioni.submit();
+    });
+});
+</script>
+{% endblock %}

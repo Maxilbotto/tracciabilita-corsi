@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Aggiungi Dipendenti{% endblock %}
+{% block content %}
+<div class="container mt-4 mb-4">
+    <h1>Aggiungi Dipendenti</h1>
+<hr class="my-4">
+    <h2>Aggiungi Singolo Dipendente</h2>
+    {% if errore_singolo %}
+    <div class="alert alert-danger">{{ errore_singolo }}</div>
+    {% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message | safe }}
+                    {% if category == 'warning' %}
+                        <form method="POST" action="{{ url_for('sovrascrivi_dipendente') }}" style="display:inline;">
+                            <input type="hidden" name="nome" value="{{ nome_duplicato }}">
+                            <input type="hidden" name="cognome" value="{{ cognome_duplicato }}">
+                            <input type="hidden" name="nome_originale" value="{{ nome_originale }}">
+                            <input type="hidden" name="cognome_originale" value="{{ cognome_originale }}">
+                            <button type="submit" class="btn btn-sm btn-primary">Sovrascrivi</button>
+                        </form> |
+                        <a href="{{ url_for('aggiungi_dipendente') }}" class="btn btn-sm btn-secondary">Salta</a> |
+                        <form method="POST" action="{{ url_for('aggiungi_dipendente') }}" style="display:inline;">
+                            <input type="hidden" name="nome" value="{{ nome_duplicato }}">
+                            <input type="hidden" name="cognome" value="{{ cognome_duplicato }}">
+                            <button type="submit" class="btn btn-sm btn-success">Aggiungi Comunque</button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form method="POST" action="{{ url_for('aggiungi_dipendente') }}" class="form-standard">
+        <div class="mb-3">
+            <label for="nome" class="form-label">Nome:</label>
+            <input type="text" class="form-control" id="nome" name="nome" required>
+        </div>
+        <div class="mb-3">
+            <label for="cognome" class="form-label">Cognome:</label>
+            <input type="text" class="form-control" id="cognome" name="cognome" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Salva Dipendente</button>
+    </form>
+
+    <hr class="my-4">
+
+    <h2>Carica Elenco Dipendenti da CSV</h2>
+    {% if errore_csv %}
+    <div class="alert alert-danger">{{ errore_csv }}</div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('carica_dipendenti_csv') }}" enctype="multipart/form-data" class="form-standard">
+        <div class="mb-3">
+            <label for="file_csv" class="form-label">Seleziona File CSV:</label>
+            <input type="file" class="form-control" id="file_csv" name="file_csv" accept=".csv" required>
+            <small class="form-text text-muted">Il file CSV deve contenere le colonne "nome" e "cognome".</small>
+        </div>
+        <button type="submit" class="btn btn-success">Carica Dipendenti</button>
+    </form>
+
+    <div class="mt-3">
+        <a href="{{ url_for('lista_dipendenti') }}" class="btn btn-primary">Torna all'elenco dei dipendenti</a>
+    </div>
+</div>
+{% endblock %}

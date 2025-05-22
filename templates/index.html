@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Home - Tracciabilità Corsi{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2 text-center">
+            <h1>Benvenuto nel sistema di tracciabilità dei <br>corsi di formazione in azienda!</h1>
+            <hr class="my-4">
+
+            <a href="{{ url_for('lista_corsi') }}" class="btn btn-primary mt-3">Visualizza Corsi</a>
+            <a href="{{ url_for('lista_dipendenti') }}" class="btn btn-secondary mt-3">Visualizza Dipendenti</a>
+            <a href="{{ url_for('lista_partecipazioni') }}" class="btn btn-success mt-3">Visualizza Partecipazioni</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+
+{% endblock %}
