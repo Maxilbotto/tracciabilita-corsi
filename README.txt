@@ -14,7 +14,7 @@ ISTRUZIONI DETTAGLIATE:
 Tracciabilità Corsi - Applicazione Web Flask
 ============================================
 
-Questa applicazione permette di gestire corsi, dipendenti e partecipazioni. È sviluppata in Python con il micro-framework Flask e utilizza un database MySQL.
+Questa applicazione permette di gestire corsi, dipendenti e partecipazioni ai corsi. È sviluppata in Python con il micro-framework Flask e utilizza un database MySQL.
 
 REQUISITI
 ---------
